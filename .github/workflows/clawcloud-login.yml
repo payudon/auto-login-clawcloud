@@ -10,8 +10,7 @@ jobs:
   auto-login:
     runs-on: ubuntu-latest
     
-    # 【关键修改】强制所有 JavaScript Actions 使用 Node.js 24 运行
-    # 这将彻底消除 "Node.js 20 actions are deprecated" 警告
+    # 强制使用 Node.js 24 消除警告
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -19,18 +18,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 【修改点】移除 cache 配置，防止它自动寻找 requirements.txt
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
+          # 删除了 cache: 'pip'，因为项目根目录没有 requirements.txt
+          # 如果需要缓存，可以在下面 Install Dependencies 步骤手动配置 cache 动作，但此处直接安装更简单
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install playwright pyotp
           playwright install chromium
-          # 必须安装系统依赖，否则浏览器无法启动
+          # 必须安装系统级依赖，否则浏览器启动会报错
           playwright install-deps chromium
 
       - name: Run Login Script
@@ -38,7 +39,6 @@ jobs:
           GH_USERNAME: ${{ secrets.GH_USERNAME }}
           GH_PASSWORD: ${{ secrets.GH_PASSWORD }}
           GH_2FA_SECRET: ${{ secrets.GH_2FA_SECRET }}
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 0 
         run: python -u login_script.py
 
       - name: Upload Debug Screenshot
