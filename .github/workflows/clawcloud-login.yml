@@ -9,38 +9,42 @@ on:
 jobs:
   auto-login:
     runs-on: ubuntu-latest
+    
+    # 【关键修改】强制所有 JavaScript Actions 使用 Node.js 24 运行
+    # 这将彻底消除 "Node.js 20 actions are deprecated" 警告
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
-      # 【修改点 1】升级到 actions/checkout@v4 (支持新版 Node)
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 【修改点 2】升级到 actions/setup-python@v5 (支持新版 Node 和最新 Python)
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11' # 建议使用更新的 Python 版本，3.9 也能用但较旧
+          python-version: '3.11'
+          cache: 'pip'
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install playwright pyotp
           playwright install chromium
+          # 必须安装系统依赖，否则浏览器无法启动
+          playwright install-deps chromium
 
       - name: Run Login Script
         env:
           GH_USERNAME: ${{ secrets.GH_USERNAME }}
           GH_PASSWORD: ${{ secrets.GH_PASSWORD }}
           GH_2FA_SECRET: ${{ secrets.GH_2FA_SECRET }}
-        
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 0 
         run: python -u login_script.py
 
-      # 【修改点 3】升级到 actions/upload-artifact@v4 (确保兼容性，v4 是目前主流稳定版)
-      # 注意：如果未来仍有警告，可检查是否有 v5 版本发布
       - name: Upload Debug Screenshot
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: login-result
+          name: login-result-${{ github.run_id }}
           path: login_result.png
-          retention-days: 5 # 可选：设置截图保留天数，节省空间
+          retention-days: 3
