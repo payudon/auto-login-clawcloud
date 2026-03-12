@@ -9,35 +9,43 @@ on:
 jobs:
   auto-login:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true 
 
     steps:
+      # 1. 使用最新的 checkout v4
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
+      # 2. 【关键修改】使用 setup-python v5 并升级到 Python 3.11
+      # Python 3.9 的下载源经常挂掉，3.11+ 更稳定且兼容 Playwright
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.11'
+          cache: 'pip' # 开启 pip 缓存，加速依赖安装
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
+          # 安装 playwright 和 pyotp
           pip install playwright pyotp
+          # 预安装 Chromium 浏览器内核
           playwright install chromium
+          # 【重要】安装系统级依赖，防止浏览器启动失败
+          playwright install-deps chromium
 
       - name: Run Login Script
         env:
           GH_USERNAME: ${{ secrets.GH_USERNAME }}
           GH_PASSWORD: ${{ secrets.GH_PASSWORD }}
           GH_2FA_SECRET: ${{ secrets.GH_2FA_SECRET }}
-        
+          # 禁用 Playwright 的遥测数据，保持日志干净
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 0 
         run: python -u login_script.py
 
       - name: Upload Debug Screenshot
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: login-result
+          name: login-result-${{ github.run_id }}
           path: login_result.png
+          retention-days: 3
