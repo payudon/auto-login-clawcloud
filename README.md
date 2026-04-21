@@ -63,4 +63,6 @@
 
 本项目采用 **MIT License**。详情见 [LICENSE](LICENSE)。
 
+## ⚠️ 免责声明：本脚本仅供学习交流使用，使用者需遵守 [ClawCloud 官方服务条款](https://docs.run.claw.cloud/clawcloud-run/legal/terms-and-conditions)。因使用本脚本造成的任何问题，作者不承担任何责任。
+
 ***搬运请标明来源！***
